@@ -146,8 +146,8 @@ def record_scalars(metric_dict):
 def get_learning_rate(learning_rate, hidden_size, learning_rate_warmup_steps):
   """Calculate learning rate with linear warmup and rsqrt decay."""
   with tf.name_scope("learning_rate"):
-    warmup_steps = tf.to_float(learning_rate_warmup_steps)
-    step = tf.to_float(tf.train.get_or_create_global_step())
+    warmup_steps = tf.to_bfloat16(learning_rate_warmup_steps)
+    step = tf.to_bfloat16(tf.train.get_or_create_global_step())
 
     learning_rate *= (hidden_size ** -0.5)
     # Apply linear warmup
