@@ -42,13 +42,13 @@ def get_position_encoding(
   Returns:
     Tensor with shape [length, hidden_size]
   """
-  position = tf.to_float(tf.range(length))
+  position = tf.to_bfloat16(tf.range(length))
   num_timescales = hidden_size // 2
   log_timescale_increment = (
       math.log(float(max_timescale) / float(min_timescale)) /
-      (tf.to_float(num_timescales) - 1))
+      (tf.to_bfloat16(num_timescales) - 1))
   inv_timescales = min_timescale * tf.exp(
-      tf.to_float(tf.range(num_timescales)) * -log_timescale_increment)
+      tf.to_bfloat16(tf.range(num_timescales)) * -log_timescale_increment)
   scaled_time = tf.expand_dims(position, 1) * tf.expand_dims(inv_timescales, 0)
   signal = tf.concat([tf.sin(scaled_time), tf.cos(scaled_time)], axis=1)
   return signal
@@ -65,7 +65,7 @@ def get_decoder_self_attention_bias(length):
     length: int length of sequences in batch.
 
   Returns:
-    float tensor of shape [1, 1, length, length]
+    bfloat16 tensor of shape [1, 1, length, length]
   """
   with tf.name_scope("decoder_self_attention_bias"):
     valid_locs = tf.matrix_band_part(tf.ones([length, length]), -1, 0)
@@ -75,7 +75,7 @@ def get_decoder_self_attention_bias(length):
 
 
 def get_padding(x, padding_value=0):
-  """Return float tensor representing the padding values in x.
+  """Return bfloat16 tensor representing the padding values in x.
 
   Args:
     x: int tensor with any shape
@@ -86,7 +86,7 @@ def get_padding(x, padding_value=0):
       0 -> non-padding, 1 -> padding
   """
   with tf.name_scope("padding"):
-    return tf.to_float(tf.equal(x, padding_value))
+    return tf.to_bfloat16(tf.equal(x, padding_value))
 
 
 def get_padding_bias(x):

@@ -64,13 +64,13 @@ class EmbeddingSharedWeights(tf.layers.Layer):
     Args:
       x: An int64 tensor with shape [batch_size, length]
     Returns:
-      embeddings: float32 tensor with shape [batch_size, length, embedding_size]
-      padding: float32 tensor with shape [batch_size, length] indicating the
+      embeddings: bfloat16 tensor with shape [batch_size, length, embedding_size]
+      padding: bfloat16 tensor with shape [batch_size, length] indicating the
         locations of the padding tokens in x.
     """
     with tf.name_scope("embedding"):
       # Create binary mask of size [batch_size, length]
-      mask = tf.to_float(tf.not_equal(x, 0))
+      mask = tf.to_bfloat16(tf.not_equal(x, 0))
 
       if self.method == "gather":
         embeddings = tf.gather(self.shared_weights, x)
@@ -95,9 +95,9 @@ class EmbeddingSharedWeights(tf.layers.Layer):
     """Computes logits by running x through a linear layer.
 
     Args:
-      x: A float32 tensor with shape [batch_size, length, hidden_size]
+      x: A bfloat16 tensor with shape [batch_size, length, hidden_size]
     Returns:
-      float32 tensor with shape [batch_size, length, vocab_size].
+      bfloat16 tensor with shape [batch_size, length, vocab_size].
     """
     with tf.name_scope("presoftmax_linear"):
       batch_size = tf.shape(x)[0]

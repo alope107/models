@@ -58,7 +58,7 @@ def padded_cross_entropy_loss(logits, labels, smoothing, vocab_size):
     smoothing: Label smoothing constant, used to determine the on and off values
     vocab_size: int size of the vocabulary
   Returns:
-    Returns the cross entropy loss and weight tensors: float32 tensors with
+    Returns the cross entropy loss and weight tensors: bfloat16 tensors with
       shape [batch_size, max(length_logits, length_labels)]
   """
   with tf.name_scope("loss", [logits, labels]):
@@ -67,7 +67,7 @@ def padded_cross_entropy_loss(logits, labels, smoothing, vocab_size):
     # Calculate smoothing cross entropy
     with tf.name_scope("smoothing_cross_entropy", [logits, labels]):
       confidence = 1.0 - smoothing
-      low_confidence = (1.0 - confidence) / tf.to_float(vocab_size - 1)
+      low_confidence = (1.0 - confidence) / tf.to_bfloat16(vocab_size - 1)
       soft_targets = tf.one_hot(
           tf.cast(labels, tf.int32),
           depth=vocab_size,
@@ -79,11 +79,11 @@ def padded_cross_entropy_loss(logits, labels, smoothing, vocab_size):
       # Calculate the best (lowest) possible value of cross entropy, and
       # subtract from the cross entropy loss.
       normalizing_constant = -(
-          confidence * tf.log(confidence) + tf.to_float(vocab_size - 1) *
+          confidence * tf.log(confidence) + tf.to_bfloat16(vocab_size - 1) *
           low_confidence * tf.log(low_confidence + 1e-20))
       xentropy -= normalizing_constant
 
-    weights = tf.to_float(tf.not_equal(labels, 0))
+    weights = tf.to_bfloat16(tf.not_equal(labels, 0))
     return xentropy * weights, weights
 
 
@@ -142,24 +142,24 @@ def padded_accuracy(logits, labels):
   """Percentage of times that predictions matches labels on non-0s."""
   with tf.variable_scope("padded_accuracy", values=[logits, labels]):
     logits, labels = _pad_tensors_to_same_length(logits, labels)
-    weights = tf.to_float(tf.not_equal(labels, 0))
+    weights = tf.to_bfloat16(tf.not_equal(labels, 0))
     outputs = tf.to_int32(tf.argmax(logits, axis=-1))
     padded_labels = tf.to_int32(labels)
-    return tf.to_float(tf.equal(outputs, padded_labels)), weights
+    return tf.to_bfloat16(tf.equal(outputs, padded_labels)), weights
 
 
 def padded_accuracy_topk(logits, labels, k):
   """Percentage of times that top-k predictions matches labels on non-0s."""
   with tf.variable_scope("padded_accuracy_topk", values=[logits, labels]):
     logits, labels = _pad_tensors_to_same_length(logits, labels)
-    weights = tf.to_float(tf.not_equal(labels, 0))
+    weights = tf.to_bfloat16(tf.not_equal(labels, 0))
     effective_k = tf.minimum(k, tf.shape(logits)[-1])
     _, outputs = tf.nn.top_k(logits, k=effective_k)
     outputs = tf.to_int32(outputs)
     padded_labels = tf.to_int32(labels)
     padded_labels = tf.expand_dims(padded_labels, axis=-1)
     padded_labels += tf.zeros_like(outputs)  # Pad to same shape.
-    same = tf.to_float(tf.equal(outputs, padded_labels))
+    same = tf.to_bfloat16(tf.equal(outputs, padded_labels))
     same_topk = tf.reduce_sum(same, axis=-1)
     return same_topk, weights
 
@@ -172,10 +172,10 @@ def padded_sequence_accuracy(logits, labels):
   """Percentage of times that predictions matches labels everywhere (non-0)."""
   with tf.variable_scope("padded_sequence_accuracy", values=[logits, labels]):
     logits, labels = _pad_tensors_to_same_length(logits, labels)
-    weights = tf.to_float(tf.not_equal(labels, 0))
+    weights = tf.to_bfloat16(tf.not_equal(labels, 0))
     outputs = tf.to_int32(tf.argmax(logits, axis=-1))
     padded_labels = tf.to_int32(labels)
-    not_correct = tf.to_float(tf.not_equal(outputs, padded_labels)) * weights
+    not_correct = tf.to_bfloat16(tf.not_equal(outputs, padded_labels)) * weights
     axis = list(range(1, len(outputs.get_shape())))
     correct_seq = 1.0 - tf.minimum(1.0, tf.reduce_sum(not_correct, axis=axis))
     return correct_seq, tf.constant(1.0)
@@ -203,7 +203,7 @@ def bleu_score(logits, labels):
   """
   predictions = tf.to_int32(tf.argmax(logits, axis=-1))
   # TODO: Look into removing use of py_func
-  bleu = tf.py_func(compute_bleu, (labels, predictions), tf.float32)
+  bleu = tf.py_func(compute_bleu, (labels, predictions), tf.bfloat16)
   return bleu, tf.constant(1.0)
 
 
@@ -308,7 +308,7 @@ def rouge_2_fscore(logits, labels):
   """
   predictions = tf.to_int32(tf.argmax(logits, axis=-1))
   # TODO: Look into removing use of py_func
-  rouge_2_f_score = tf.py_func(rouge_n, (predictions, labels), tf.float32)
+  rouge_2_f_score = tf.py_func(rouge_n, (predictions, labels), tf.bfloat16)
   return rouge_2_f_score, tf.constant(1.0)
 
 
@@ -385,7 +385,7 @@ def rouge_l_fscore(predictions, labels):
   """
   outputs = tf.to_int32(tf.argmax(predictions, axis=-1))
   rouge_l_f_score = tf.py_func(rouge_l_sentence_level, (outputs, labels),
-                               tf.float32)
+                               tf.bfloat16)
   return rouge_l_f_score, tf.constant(1.0)
 
 

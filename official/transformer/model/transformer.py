@@ -137,7 +137,7 @@ class Transformer(object):
       attention_bias: float tensor with shape [batch_size, 1, 1, input_length]
 
     Returns:
-      float32 tensor with shape [batch_size, target_length, vocab_size]
+      bfloat16 tensor with shape [batch_size, target_length, vocab_size]
     """
     with tf.name_scope("decode"):
       # Prepare inputs to decoder layers by shifting targets, adding positional
@@ -327,7 +327,7 @@ class EncoderStack(tf.layers.Layer):
 
     Returns:
       Output of encoder layer stack.
-      float32 tensor with shape [batch_size, input_length, hidden_size]
+      bfloat16 tensor with shape [batch_size, input_length, hidden_size]
     """
     for n, layer in enumerate(self.layers):
       # Run inputs through the sublayers.
@@ -394,7 +394,7 @@ class DecoderStack(tf.layers.Layer):
 
     Returns:
       Output of decoder layer stack.
-      float32 tensor with shape [batch_size, target_length, hidden_size]
+      bfloat16 tensor with shape [batch_size, target_length, hidden_size]
     """
     for n, layer in enumerate(self.layers):
       self_attention_layer = layer[0]
