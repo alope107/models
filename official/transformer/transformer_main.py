@@ -32,6 +32,8 @@ from absl import flags
 import tensorflow as tf
 # pylint: enable=g-bad-import-order
 
+from tensorflow.contrib.tpu import bfloat16_scope
+
 from official.transformer import compute_bleu
 from official.transformer import translate
 from official.transformer.model import model_params
@@ -72,7 +74,8 @@ def model_fn(features, labels, mode, params):
     inputs, targets = features, labels
 
     # Create model and get output logits.
-    model = transformer.Transformer(params, mode == tf.estimator.ModeKeys.TRAIN)
+    with bfloat16_scope():
+        model = transformer.Transformer(params, mode == tf.estimator.ModeKeys.TRAIN)
 
     logits = model(inputs, targets)
 
